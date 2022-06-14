@@ -1,0 +1,31 @@
+version: '3'
+services:
+  mysql:
+    build: ./docker-configs/mysql
+    # added for compatibility with m1
+    # platform: 'linux/x86_64'
+    user: root
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: admin
+    volumes:
+      - ./data/mysql:/var/lib/mysql:cached
+      - ./data/init.d:/docker-entrypoint-initdb.d
+      - ./data/backup:/usr/backup
+
+  training:
+    build: docker-configs/training
+    volumes:
+      - ./apps/training:/var/www/html:delegated
+      - ./docker-configs/training/000-default.conf:/etc/apache2/sites-available/000-default.conf
+      - exclude:/var/www/html/.git
+    depends_on:
+      - mysql
+    links:
+      - mysql
+    ports:
+      - "8080:80"
+
+volumes:
+  exclude: #Add an empty volume.
